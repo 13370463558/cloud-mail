@@ -135,7 +135,9 @@ app.use('*', async (c, next) => {
 		return path.startsWith(item);
 	});
 
-	if (permIndex > -1) {
+	// The admin bypasses per-request permission lookups. This avoids a
+	// user/role/role_perm/perm join on every poll (D1 rows read).
+	if (permIndex > -1 && authInfo.user.email !== c.env.admin) {
 
 		const permKeys = await permService.userPermKeys(c, authInfo.user.userId);
 
@@ -145,7 +147,7 @@ app.use('*', async (c, next) => {
 			return path.startsWith(item);
 		});
 
-		if (userPermIndex === -1 && authInfo.user.email !== c.env.admin) {
+		if (userPermIndex === -1) {
 			throw new BizError(t('unauthorized'), 403);
 		}
 
